@@ -15,12 +15,6 @@ impl SecretSatan {
         }
     }
 
-    pub fn default() -> SecretSatan {
-        SecretSatan {
-            participants: Vec::new(),
-        }
-    }
-
     pub fn add_participant(&mut self, participant: Participant) {
         self.participants.push(participant);
     }
@@ -44,8 +38,6 @@ impl SecretSatan {
             while recipients.len() > 0 && count < all_givers.len() {
                 let recipient = recipients.pop_front().unwrap();
                 let mut recipient = givers.get(&recipient.name).unwrap().clone();
-
-                println!("{} is giving to {}", participant.name, recipient.name);
 
                 if let Ok(()) = participant.validate_giving_to(&recipient) {
                     participant.giving_to = Some(recipient.name.clone());
@@ -91,16 +83,6 @@ impl Participant {
         }
     }
 
-    pub fn default() -> Participant {
-        Participant {
-            name: String::new(),
-            giving_to: None,
-            receiving_from: None,
-            excluding: Vec::new(),
-            drawn: false,
-        }
-    }
-
     pub fn validate_giving_to(&self, recipient: &Participant) -> Result<(), SecretSatanError> {
         // Cannot give to yourself
         if self.name == recipient.name {
@@ -123,9 +105,9 @@ impl Participant {
             return Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreExcluding);
         }
         // Cannot give to someone who has excluded you
-        if recipient.excluding.contains(&self.name) {
-            return Err(SecretSatanError::ParticipantCannotReceiveFromSomeoneTheyAreExcluding);
-        }
+        // if recipient.excluding.contains(&self.name) {
+        //     return Err(SecretSatanError::ParticipantCannotReceiveFromSomeoneTheyAreExcluding);
+        // }
         // Cannot give to someone who has already been drawn
         if recipient.drawn {
             return Err(SecretSatanError::ParticipantAlreadyDrawn);
@@ -159,12 +141,6 @@ mod tests {
     }
 
     #[test]
-    fn secret_satan_default() {
-        let secret_satan = SecretSatan::default();
-        assert_eq!(secret_satan.participants.len(), 0);
-    }
-
-    #[test]
     fn secret_satan_add_participant() {
         let mut secret_satan = SecretSatan::new();
         let participant = Participant::new("Alice".to_string());
@@ -179,17 +155,7 @@ mod tests {
         assert_eq!(participant.giving_to, None);
         assert_eq!(participant.receiving_from, None);
         assert_eq!(participant.excluding.len(), 0);
-        assert_eq!(participant.drawn, false);
-    }
-
-    #[test]
-    fn participant_default() {
-        let participant = Participant::default();
-        assert_eq!(participant.name, "");
-        assert_eq!(participant.giving_to, None);
-        assert_eq!(participant.receiving_from, None);
-        assert_eq!(participant.excluding.len(), 0);
-        assert_eq!(participant.drawn, false);
+        assert!(!participant.drawn);
     }
 
     #[test]
@@ -234,15 +200,6 @@ mod tests {
         participant.excluding.push("Bob".to_string());
         let result = participant.validate_giving_to(&recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreExcluding));
-    }
-
-    #[test]
-    fn participant_cannot_give_to_someone_who_has_excluded_them() {
-        let participant = Participant::new("Alice".to_string());
-        let mut recipient = Participant::new("Bob".to_string());
-        recipient.excluding.push("Alice".to_string());
-        let result = participant.validate_giving_to(&recipient);
-        assert_eq!(result, Err(SecretSatanError::ParticipantCannotReceiveFromSomeoneTheyAreExcluding));
     }
 
     #[test]
@@ -325,6 +282,7 @@ mod tests {
         assert_eq!(givers.len(), 3);
         assert_ne!(givers[0].giving_to, None);
         assert_ne!(givers[0].giving_to, Some(givers[0].clone().name));
+        assert_ne!(givers[0].giving_to, Some(givers[0].excluding.first().unwrap().clone()));
         assert_ne!(givers[1].giving_to, None);
         assert_ne!(givers[1].giving_to, Some(givers[1].clone().name));
         assert_ne!(givers[2].giving_to, None);

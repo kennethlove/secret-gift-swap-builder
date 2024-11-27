@@ -1,31 +1,31 @@
 #![allow(non_snake_case)]
 use dioxus::prelude::*;
-use dioxus_logger::tracing::info;
 
-use crate::components::AddGiver;
-use crate::{Participant, SecretSatan};
+use crate::components::{AddGiver, AddGiverButton};
+use crate::SecretSatan;
 
 #[component]
 pub fn App() -> Element {
-    use_context_provider(|| SecretSatan::default());
-    let secret_satan = use_context::<SecretSatan>();
-    let mut givers = use_signal(|| secret_satan.participants.clone());
+    use_context_provider(|| Signal::new(SecretSatan::default()));
+    let satan = use_context::<Signal<SecretSatan>>();
 
     rsx! {
         div {
             form {
-                // for index in 1..= givers.read().len() + 1 {
-                for index in 1..= givers.read().len() + 1 {
-                    AddGiver { index }
+                onsubmit: |event| {
+                    dioxus_logger::tracing::info!("Submitting form");
+                    for (field, value) in event.data().values() {
+                        for (idx, value) in value.iter().enumerate() {
+                            dioxus_logger::tracing::info!("{}: {:?}", field, value);
+                        }
+                    }
+                },
+                for _ in 1..= satan.read().participants.len() + 1 {
+                    AddGiver {}
                 }
-                button {
-                    r#type: "button",
-                    onclick: move |_| {
-                        info!("adding participant");
-                        givers.write().push(Participant::default());
-                    },
-                    "Add another participant"
-                }
+
+                AddGiverButton {}
+
                 button {
                     r#type: "submit",
                     "Submit"
