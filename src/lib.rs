@@ -1,4 +1,7 @@
+pub mod components;
+
 use std::collections::{HashMap, VecDeque};
+use rand::seq::SliceRandom;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct SecretSatan {
@@ -22,8 +25,8 @@ impl SecretSatan {
         self.participants.push(participant);
     }
 
-    pub fn assign_participants(mut self) -> Result<Vec<Participant>, SecretSatanError> {
-        let mut all_givers = self.participants.clone();
+    pub fn assign_participants(self) -> Result<Vec<Participant>, SecretSatanError> {
+        let all_givers = self.participants.clone();
 
         let mut givers: HashMap<String, Participant> = HashMap::new();
         for giver in all_givers.iter() {
@@ -33,12 +36,16 @@ impl SecretSatan {
         for participant in all_givers.clone() {
             let mut participant = givers.get(&participant.name).unwrap().clone();
             let mut recipients = VecDeque::from(all_givers.clone());
+            let rng = &mut rand::thread_rng();
+            recipients.make_contiguous().shuffle(rng);
 
-            while recipients.len() > 0 {
+            let mut count = 0;
+
+            while recipients.len() > 0 && count < all_givers.len() {
                 let recipient = recipients.pop_front().unwrap();
                 let mut recipient = givers.get(&recipient.name).unwrap().clone();
 
-                println!("{} -> {}", participant.name, recipient.name);
+                println!("{} is giving to {}", participant.name, recipient.name);
 
                 if let Ok(()) = participant.validate_giving_to(&recipient) {
                     participant.giving_to = Some(recipient.name.clone());
@@ -51,7 +58,11 @@ impl SecretSatan {
                 } else {
                     recipient.drawn = true;
                     recipients.push_back(recipient);
+                    count += 1;
                 }
+            }
+            if count >= all_givers.len() {
+                return self.assign_participants();
             }
         }
 
@@ -183,8 +194,8 @@ mod tests {
 
     #[test]
     fn participant_cannot_give_to_self() {
-        let mut participant = Participant::new("Alice".to_string());
-        let mut recipient = Participant::new("Alice".to_string());
+        let participant = Participant::new("Alice".to_string());
+        let recipient = Participant::new("Alice".to_string());
         let result = participant.validate_giving_to(&recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantCannotGiveToThemself));
     }
@@ -192,7 +203,7 @@ mod tests {
     #[test]
     fn participant_cannot_give_twice() {
         let mut participant = Participant::new("Alice".to_string());
-        let mut recipient = Participant::new("Bob".to_string());
+        let recipient = Participant::new("Bob".to_string());
         participant.giving_to = Some(recipient.clone().name);
         let result = participant.validate_giving_to(&recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantAlreadyGivingToSomeone));
@@ -200,7 +211,7 @@ mod tests {
 
     #[test]
     fn participant_cannot_give_to_someone_already_receiving() {
-        let mut participant = Participant::new("Alice".to_string());
+        let participant = Participant::new("Alice".to_string());
         let mut recipient = Participant::new("Bob".to_string());
         recipient.receiving_from = Some("Alice".to_string());
         let result = participant.validate_giving_to(&recipient);
@@ -210,7 +221,7 @@ mod tests {
     #[test]
     fn participant_cannot_give_to_someone_giving_to_them() {
         let mut participant = Participant::new("Alice".to_string());
-        let mut recipient = Participant::new("Bob".to_string());
+        let recipient = Participant::new("Bob".to_string());
         participant.receiving_from = Some("Bob".to_string());
         let result = participant.validate_giving_to(&recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreReceivingFrom));
@@ -219,7 +230,7 @@ mod tests {
     #[test]
     fn participant_cannot_give_to_someone_they_have_excluded() {
         let mut participant = Participant::new("Alice".to_string());
-        let mut recipient = Participant::new("Bob".to_string());
+        let recipient = Participant::new("Bob".to_string());
         participant.excluding.push("Bob".to_string());
         let result = participant.validate_giving_to(&recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreExcluding));
@@ -227,7 +238,7 @@ mod tests {
 
     #[test]
     fn participant_cannot_give_to_someone_who_has_excluded_them() {
-        let mut participant = Participant::new("Alice".to_string());
+        let participant = Participant::new("Alice".to_string());
         let mut recipient = Participant::new("Bob".to_string());
         recipient.excluding.push("Alice".to_string());
         let result = participant.validate_giving_to(&recipient);
@@ -236,7 +247,7 @@ mod tests {
 
     #[test]
     fn participant_cannot_give_to_someone_already_drawn() {
-        let mut participant = Participant::new("Alice".to_string());
+        let participant = Participant::new("Alice".to_string());
         let mut recipient = Participant::new("Bob".to_string());
         recipient.drawn = true;
         let result = participant.validate_giving_to(&recipient);
@@ -249,7 +260,7 @@ mod tests {
         let bob = Participant::new("Bob".to_string());
         let charlie = Participant::new("Charlie".to_string());
 
-        let mut session = SecretSatan {
+        let session = SecretSatan {
             participants: vec![alice.clone(), bob.clone(), charlie.clone()],
         };
         let result = session.assign_participants();
@@ -274,7 +285,7 @@ mod tests {
         let david = Participant::new("David".to_string());
         let eve = Participant::new("Eve".to_string());
 
-        let mut session = SecretSatan {
+        let session = SecretSatan {
             participants: vec![alice.clone(), bob.clone(), charlie.clone(), david.clone(), eve.clone()],
         };
         let result = session.assign_participants();
@@ -293,5 +304,30 @@ mod tests {
         assert_ne!(givers[3].giving_to, Some(givers[3].clone().name));
         assert_ne!(givers[4].giving_to, None);
         assert_ne!(givers[4].giving_to, Some(givers[4].clone().name));
+    }
+
+    #[test]
+    fn exclusions_are_accounted_for() {
+        let mut alice = Participant::new("Alice".to_string());
+        alice.excluding.push("Bob".to_string());
+        let bob = Participant::new("Bob".to_string());
+        let charlie = Participant::new("Charlie".to_string());
+
+        let session = SecretSatan {
+            participants: vec![alice.clone(), bob.clone(), charlie.clone()],
+        };
+
+        let result = session.assign_participants();
+        if let Err(e) = result {
+            panic!("Error: {:?}", e);
+        }
+        let givers = result.ok().unwrap();
+        assert_eq!(givers.len(), 3);
+        assert_ne!(givers[0].giving_to, None);
+        assert_ne!(givers[0].giving_to, Some(givers[0].clone().name));
+        assert_ne!(givers[1].giving_to, None);
+        assert_ne!(givers[1].giving_to, Some(givers[1].clone().name));
+        assert_ne!(givers[2].giving_to, None);
+        assert_ne!(givers[2].giving_to, Some(givers[2].clone().name));
     }
 }
