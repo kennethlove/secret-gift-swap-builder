@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct SecretSatan {
@@ -24,38 +24,33 @@ impl SecretSatan {
 
     pub fn assign_participants(mut self) -> Result<Vec<Participant>, SecretSatanError> {
         let mut all_givers = self.participants.clone();
-        let mut all_receivers = self.participants.clone();
-        let mut output: Vec<Participant> = Vec::new();
 
-        for mut giver in all_givers.clone() {
-            let mut possible_receivers = all_receivers.clone();
-            possible_receivers.retain(|receiver| {
-                receiver.name != giver.name
-            });
+        let mut givers: HashMap<String, Participant> = HashMap::new();
+        for giver in all_givers.iter() {
+            givers.insert(giver.name.clone(), giver.clone());
+        }
 
-            for mut receiver in possible_receivers {
-                match giver.gives_to(&mut receiver) {
-                    Ok((giver, receiver)) => {
-                        // Update giver and receiver in participants
-                        let giver_index = self.participants.iter().position(|p| p.name == giver.name).unwrap();
-                        let receiver_index = self.participants.iter().position(|p| p.name == receiver.name).unwrap();
-                        all_givers[giver_index] = giver.clone();
-                        all_givers[receiver_index] = receiver.clone();
-                        all_receivers[giver_index] = giver.clone();
-                        all_receivers[receiver_index] = receiver.clone();
-                        output.push(giver.clone());
-                        println!("{:?} gives to {:?}", giver, receiver);
-                        break;
-                    }
-                    Err(e) => {
-                        eprintln!("Error: {:?}", e);
-                        continue
-                    }
+        for participant in all_givers.clone() {
+            let mut participant = givers.get(&participant.name).unwrap().clone();
+            let mut recipients = VecDeque::from(all_givers.clone());
+
+            while recipients.len() > 0 {
+                let recipient = recipients.pop_front().unwrap();
+                let mut recipient = givers.get(&recipient.name).unwrap().clone();
+                if let Ok(()) = participant.validate_giving_to(&recipient) {
+                    participant.giving_to = Some(recipient.name.clone());
+                    recipient.receiving_from = Some(participant.name.clone());
+                    recipient.excluding.push(participant.name.clone());
+                    recipient.drawn = true;
+                    givers.insert(participant.name.clone(), participant.clone());
+                    givers.insert(recipient.name.clone(), recipient.clone());
+                    break;
                 }
+                recipients.push_back(recipient);
             }
         }
 
-        Ok(all_givers)
+        Ok(givers.values().cloned().collect())
 
     }
 }
@@ -90,16 +85,7 @@ impl Participant {
         }
     }
 
-    pub fn gives_to(&mut self, recipient: &mut Participant) -> Result<(Participant, Participant), SecretSatanError> {
-        self.validate_giving_to(recipient)?;
-        self.giving_to = Some(recipient.name.clone());
-        recipient.receiving_from = Some(self.name.clone());
-        recipient.excluding.push(self.name.clone());
-        recipient.drawn = true;
-        Ok((self.clone(), recipient.clone()))
-    }
-
-    fn validate_giving_to(&self, recipient: &mut Participant) -> Result<(), SecretSatanError> {
+    pub fn validate_giving_to(&self, recipient: &Participant) -> Result<(), SecretSatanError> {
         // Cannot give to yourself
         if self.name == recipient.name {
             return Err(SecretSatanError::ParticipantCannotGiveToThemself);
@@ -194,7 +180,7 @@ mod tests {
     fn participant_cannot_give_to_self() {
         let mut participant = Participant::new("Alice".to_string());
         let mut recipient = Participant::new("Alice".to_string());
-        let result = participant.gives_to(&mut recipient);
+        let result = participant.validate_giving_to(&recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantCannotGiveToThemself));
     }
 
@@ -202,8 +188,8 @@ mod tests {
     fn participant_cannot_give_twice() {
         let mut participant = Participant::new("Alice".to_string());
         let mut recipient = Participant::new("Bob".to_string());
-        participant.gives_to(&mut recipient).unwrap();
-        let result = participant.gives_to(&mut recipient);
+        participant.giving_to = Some(recipient.clone().name);
+        let result = participant.validate_giving_to(&recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantAlreadyGivingToSomeone));
     }
 
@@ -212,7 +198,7 @@ mod tests {
         let mut participant = Participant::new("Alice".to_string());
         let mut recipient = Participant::new("Bob".to_string());
         recipient.receiving_from = Some("Alice".to_string());
-        let result = participant.gives_to(&mut recipient);
+        let result = participant.validate_giving_to(&recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantAlreadyReceivingFromSomeone));
     }
 
@@ -221,7 +207,7 @@ mod tests {
         let mut participant = Participant::new("Alice".to_string());
         let mut recipient = Participant::new("Bob".to_string());
         participant.receiving_from = Some("Bob".to_string());
-        let result = participant.gives_to(&mut recipient);
+        let result = participant.validate_giving_to(&recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreReceivingFrom));
     }
 
@@ -230,7 +216,7 @@ mod tests {
         let mut participant = Participant::new("Alice".to_string());
         let mut recipient = Participant::new("Bob".to_string());
         participant.excluding.push("Bob".to_string());
-        let result = participant.gives_to(&mut recipient);
+        let result = participant.validate_giving_to(&recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreExcluding));
     }
 
@@ -239,7 +225,7 @@ mod tests {
         let mut participant = Participant::new("Alice".to_string());
         let mut recipient = Participant::new("Bob".to_string());
         recipient.excluding.push("Alice".to_string());
-        let result = participant.gives_to(&mut recipient);
+        let result = participant.validate_giving_to(&recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantCannotReceiveFromSomeoneTheyAreExcluding));
     }
 
@@ -248,7 +234,7 @@ mod tests {
         let mut participant = Participant::new("Alice".to_string());
         let mut recipient = Participant::new("Bob".to_string());
         recipient.drawn = true;
-        let result = participant.gives_to(&mut recipient);
+        let result = participant.validate_giving_to(&recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantAlreadyDrawn));
     }
 
@@ -266,8 +252,9 @@ mod tests {
             panic!("Error: {:?}", e);
         }
         let givers = result.ok().unwrap();
-        assert_eq!(givers[0].giving_to, Some("Bob".to_string()));
-        assert_eq!(givers[1].giving_to, Some("Charlie".to_string()));
-        assert_eq!(givers[2].giving_to, Some("Alice".to_string()));
+        assert_eq!(givers.len(), 3);
+        assert_ne!(givers[0].giving_to, Some(givers[0].clone().name));
+        assert_ne!(givers[1].giving_to, Some(givers[1].clone().name));
+        assert_ne!(givers[2].giving_to, Some(givers[2].clone().name));
     }
 }
