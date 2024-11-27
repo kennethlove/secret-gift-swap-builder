@@ -22,48 +22,41 @@ impl SecretSatan {
         self.participants.push(participant);
     }
 
-    pub fn assign_participants(&mut self) -> Result<Vec<Participant>, SecretSatanError> {
-        let mut participants = VecDeque::from(self.participants.clone());
-        let mut giving_to = participants.clone();
-        let mut receiving_from = participants.clone();
+    pub fn assign_participants(mut self) -> Result<Vec<Participant>, SecretSatanError> {
+        let mut all_givers = self.participants.clone();
+        let mut all_receivers = self.participants.clone();
+        let mut output: Vec<Participant> = Vec::new();
 
-        let mut processed_participants: Vec<Participant> = Vec::new();
+        for mut giver in all_givers.clone() {
+            let mut possible_receivers = all_receivers.clone();
+            possible_receivers.retain(|receiver| {
+                receiver.name != giver.name
+            });
 
-        for mut participant in participants.iter_mut() {
-            println!("Finding match for {}", participant.name);
-            let mut giving_to_participant = giving_to.pop_front().unwrap();
-            let mut receiving_from_participant = receiving_from.pop_front().unwrap();
-
-            while giving_to_participant.name == participant.name &&
-                !participant.excluding.contains(&giving_to_participant.name) &&
-                !giving_to_participant.excluding.contains(&participant.name)
-            {
-                println!("{} cannot give to {}", &participant.name, &giving_to_participant.name);
-                giving_to.push_back(giving_to_participant.clone());
-                giving_to_participant = giving_to.pop_front().unwrap();
+            for mut receiver in possible_receivers {
+                match giver.gives_to(&mut receiver) {
+                    Ok((giver, receiver)) => {
+                        // Update giver and receiver in participants
+                        let giver_index = self.participants.iter().position(|p| p.name == giver.name).unwrap();
+                        let receiver_index = self.participants.iter().position(|p| p.name == receiver.name).unwrap();
+                        all_givers[giver_index] = giver.clone();
+                        all_givers[receiver_index] = receiver.clone();
+                        all_receivers[giver_index] = giver.clone();
+                        all_receivers[receiver_index] = receiver.clone();
+                        output.push(giver.clone());
+                        println!("{:?} gives to {:?}", giver, receiver);
+                        break;
+                    }
+                    Err(e) => {
+                        eprintln!("Error: {:?}", e);
+                        continue
+                    }
+                }
             }
-
-            println!("{} is giving to {}", participant.name, giving_to_participant.name);
-            participant.giving_to = Some(giving_to_participant.name.clone());
-
-            while receiving_from_participant.name == participant.name &&
-                !participant.excluding.contains(&receiving_from_participant.name) &&
-                !receiving_from_participant.excluding.contains(&participant.name)
-            {
-                println!("{} cannot give to {}", &participant.name, &receiving_from_participant.name);
-                receiving_from.push_back(receiving_from_participant.clone());
-                receiving_from_participant = receiving_from.pop_front().unwrap();
-            }
-
-            println!("{} is giving to {}", participant.name, giving_to_participant.name);
-            participant.giving_to = Some(giving_to_participant.name.clone());
-            println!("{} is receiving from {}", participant.name, receiving_from_participant.name);
-            receiving_from_participant.giving_to = Some(participant.name.clone());
-
-            processed_participants.push(participant.clone());
         }
 
-        Ok(processed_participants)
+        Ok(all_givers)
+
     }
 }
 
@@ -73,6 +66,7 @@ pub struct Participant {
     pub giving_to: Option<String>,
     pub receiving_from: Option<String>,
     pub excluding: Vec<String>,
+    pub drawn: bool,
 }
 
 impl Participant {
@@ -82,6 +76,7 @@ impl Participant {
             giving_to: None,
             receiving_from: None,
             excluding: Vec::new(),
+            drawn: false,
         }
     }
 
@@ -91,60 +86,60 @@ impl Participant {
             giving_to: None,
             receiving_from: None,
             excluding: Vec::new(),
+            drawn: false,
         }
     }
 
-    pub fn validate_giving_to(&self, participant: &Participant) -> Result<(), SecretSatanError> {
-        if self.name == participant.name {
-            return Err(SecretSatanError::ParticipantCannotGiveToThemselves);
+    pub fn gives_to(&mut self, recipient: &mut Participant) -> Result<(Participant, Participant), SecretSatanError> {
+        self.validate_giving_to(recipient)?;
+        self.giving_to = Some(recipient.name.clone());
+        recipient.receiving_from = Some(self.name.clone());
+        recipient.excluding.push(self.name.clone());
+        recipient.drawn = true;
+        Ok((self.clone(), recipient.clone()))
+    }
+
+    fn validate_giving_to(&self, recipient: &mut Participant) -> Result<(), SecretSatanError> {
+        // Cannot give to yourself
+        if self.name == recipient.name {
+            return Err(SecretSatanError::ParticipantCannotGiveToThemself);
         }
+        // Cannot give twice
         if self.giving_to.is_some() {
             return Err(SecretSatanError::ParticipantAlreadyGivingToSomeone);
         }
-        if self.receiving_from.is_some() && self.receiving_from.as_ref().unwrap() == &participant.name {
-            return Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreReceivingFrom);
-        }
-        if self.excluding.contains(&participant.name) {
-            return Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreExcluding);
-        }
-        Ok(())
-    }
-
-    pub fn set_giving_to(&mut self, participant: Participant) {
-        println!("{} is giving to {}", self.name, participant.name);
-        self.giving_to = Some(participant.name.clone());
-    }
-
-    pub fn validate_receiving_from(&self, participant: &Participant) -> Result<(), SecretSatanError> {
-        if self.name == participant.name {
-            return Err(SecretSatanError::ParticipantCannotReceiveFromThemselves);
-        }
-        if self.receiving_from.is_some() {
+        // Cannot give to someone who is already receiving a gift
+        if recipient.receiving_from.is_some() {
             return Err(SecretSatanError::ParticipantAlreadyReceivingFromSomeone);
         }
-        if self.giving_to.is_some() && self.giving_to.as_ref().unwrap() == &participant.name {
-            return Err(SecretSatanError::ParticipantCannotReceiveFromSomeoneTheyAreGivingTo);
+        // Cannot give to someone who is giving to you
+        if self.receiving_from == Some(recipient.name.clone()) {
+            return Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreReceivingFrom);
         }
-        if self.excluding.contains(&participant.name) {
+        // Cannot give to someone you've excluded
+        if self.excluding.contains(&recipient.name) {
+            return Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreExcluding);
+        }
+        // Cannot give to someone who has excluded you
+        if recipient.excluding.contains(&self.name) {
             return Err(SecretSatanError::ParticipantCannotReceiveFromSomeoneTheyAreExcluding);
         }
+        // Cannot give to someone who has already been drawn
+        if recipient.drawn {
+            return Err(SecretSatanError::ParticipantAlreadyDrawn);
+        }
         Ok(())
-    }
-
-    pub fn set_receiving_from(&mut self, participant: Participant) {
-        println!("{} is receiving from {}", self.name, participant.name);
-        self.receiving_from = Some(participant.name.clone());
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SecretSatanError {
-    ParticipantAlreadyExists,
+    ParticipantAlreadyDrawn,
     ParticipantDoesNotExist,
     ParticipantAlreadyGivingToSomeone,
     ParticipantAlreadyReceivingFromSomeone,
-    ParticipantCannotGiveToThemselves,
-    ParticipantCannotReceiveFromThemselves,
+    ParticipantCannotGiveToThemself,
+    ParticipantCannotReceiveFromThemself,
     ParticipantCannotGiveToSomeoneTheyAreReceivingFrom,
     ParticipantCannotReceiveFromSomeoneTheyAreGivingTo,
     ParticipantCannotGiveToSomeoneTheyAreExcluding,
@@ -156,19 +151,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_secret_satan_new() {
+    fn secret_satan_new() {
         let secret_satan = SecretSatan::new();
         assert_eq!(secret_satan.participants.len(), 0);
     }
 
     #[test]
-    fn test_secret_satan_default() {
+    fn secret_satan_default() {
         let secret_satan = SecretSatan::default();
         assert_eq!(secret_satan.participants.len(), 0);
     }
 
     #[test]
-    fn test_secret_satan_add_participant() {
+    fn secret_satan_add_participant() {
         let mut secret_satan = SecretSatan::new();
         let participant = Participant::new("Alice".to_string());
         secret_satan.add_participant(participant.clone());
@@ -176,73 +171,103 @@ mod tests {
     }
 
     #[test]
-    fn test_participants_cannot_give_to_receivers() {
-        let mut alice = Participant::new("Alice".to_string());
-        let bob = Participant::new("Bob".to_string());
-        alice.giving_to = Some(bob.name.clone());
-        let result = alice.validate_receiving_from(&bob.clone());
-        assert_eq!(result, Err(SecretSatanError::ParticipantCannotReceiveFromSomeoneTheyAreGivingTo));
+    fn participant_new() {
+        let participant = Participant::new("Alice".to_string());
+        assert_eq!(participant.name, "Alice");
+        assert_eq!(participant.giving_to, None);
+        assert_eq!(participant.receiving_from, None);
+        assert_eq!(participant.excluding.len(), 0);
+        assert_eq!(participant.drawn, false);
     }
 
     #[test]
-    fn test_participants_cannot_give_to_themselves() {
-        let mut alice = Participant::new("Alice".to_string());
-        let result = alice.validate_giving_to(&alice.clone());
-        assert_eq!(result, Err(SecretSatanError::ParticipantCannotGiveToThemselves));
+    fn participant_default() {
+        let participant = Participant::default();
+        assert_eq!(participant.name, "");
+        assert_eq!(participant.giving_to, None);
+        assert_eq!(participant.receiving_from, None);
+        assert_eq!(participant.excluding.len(), 0);
+        assert_eq!(participant.drawn, false);
     }
 
     #[test]
-    fn test_participant_cannot_give_to_excluded() {
-        let mut alice = Participant::new("Alice".to_string());
-        let bob = Participant::new("Bob".to_string());
-        alice.excluding.push(bob.name.clone());
-        let result = alice.validate_giving_to(&bob.clone());
-        assert_eq!(result, Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreExcluding));
+    fn participant_cannot_give_to_self() {
+        let mut participant = Participant::new("Alice".to_string());
+        let mut recipient = Participant::new("Alice".to_string());
+        let result = participant.gives_to(&mut recipient);
+        assert_eq!(result, Err(SecretSatanError::ParticipantCannotGiveToThemself));
     }
 
     #[test]
-    fn test_participants_cannot_receive_from_givers() {
-        let mut alice = Participant::new("Alice".to_string());
-        let bob = Participant::new("Bob".to_string());
-        alice.receiving_from = Some(bob.name.clone());
-        let result = alice.validate_giving_to(&bob.clone());
+    fn participant_cannot_give_twice() {
+        let mut participant = Participant::new("Alice".to_string());
+        let mut recipient = Participant::new("Bob".to_string());
+        participant.gives_to(&mut recipient).unwrap();
+        let result = participant.gives_to(&mut recipient);
+        assert_eq!(result, Err(SecretSatanError::ParticipantAlreadyGivingToSomeone));
+    }
+
+    #[test]
+    fn participant_cannot_give_to_someone_already_receiving() {
+        let mut participant = Participant::new("Alice".to_string());
+        let mut recipient = Participant::new("Bob".to_string());
+        recipient.receiving_from = Some("Alice".to_string());
+        let result = participant.gives_to(&mut recipient);
+        assert_eq!(result, Err(SecretSatanError::ParticipantAlreadyReceivingFromSomeone));
+    }
+
+    #[test]
+    fn participant_cannot_give_to_someone_giving_to_them() {
+        let mut participant = Participant::new("Alice".to_string());
+        let mut recipient = Participant::new("Bob".to_string());
+        participant.receiving_from = Some("Bob".to_string());
+        let result = participant.gives_to(&mut recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreReceivingFrom));
     }
 
     #[test]
-    fn test_participants_cannot_receive_from_themselves() {
-        let mut alice = Participant::new("Alice".to_string());
-        let result = alice.validate_receiving_from(&alice.clone());
-        assert_eq!(result, Err(SecretSatanError::ParticipantCannotReceiveFromThemselves));
+    fn participant_cannot_give_to_someone_they_have_excluded() {
+        let mut participant = Participant::new("Alice".to_string());
+        let mut recipient = Participant::new("Bob".to_string());
+        participant.excluding.push("Bob".to_string());
+        let result = participant.gives_to(&mut recipient);
+        assert_eq!(result, Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreExcluding));
     }
 
     #[test]
-    fn test_participant_cannot_receive_from_excluded() {
-        let mut alice = Participant::new("Alice".to_string());
-        let bob = Participant::new("Bob".to_string());
-        alice.excluding.push(bob.name.clone());
-        let result = alice.validate_receiving_from(&bob.clone());
+    fn participant_cannot_give_to_someone_who_has_excluded_them() {
+        let mut participant = Participant::new("Alice".to_string());
+        let mut recipient = Participant::new("Bob".to_string());
+        recipient.excluding.push("Alice".to_string());
+        let result = participant.gives_to(&mut recipient);
         assert_eq!(result, Err(SecretSatanError::ParticipantCannotReceiveFromSomeoneTheyAreExcluding));
     }
 
     #[test]
-    fn test_participant_assignment() {
-        let mut secret_satan = SecretSatan::new();
+    fn participant_cannot_give_to_someone_already_drawn() {
+        let mut participant = Participant::new("Alice".to_string());
+        let mut recipient = Participant::new("Bob".to_string());
+        recipient.drawn = true;
+        let result = participant.gives_to(&mut recipient);
+        assert_eq!(result, Err(SecretSatanError::ParticipantAlreadyDrawn));
+    }
+
+    #[test]
+    fn three_participants_can_give_correctly() {
         let alice = Participant::new("Alice".to_string());
         let bob = Participant::new("Bob".to_string());
         let charlie = Participant::new("Charlie".to_string());
-        secret_satan.add_participant(alice.clone());
-        secret_satan.add_participant(bob.clone());
-        secret_satan.add_participant(charlie.clone());
-        let assignments = secret_satan.assign_participants().expect("failed to assign participants");
 
-        assert_eq!(assignments[0].giving_to, Some(bob.clone().name));
-        assert_eq!(assignments[0].receiving_from, Some(charlie.clone().name));
-
-        assert_eq!(assignments[1].giving_to, Some(charlie.clone().name));
-        assert_eq!(assignments[1].receiving_from, Some(alice.clone().name));
-
-        assert_eq!(assignments[2].giving_to, Some(alice.clone().name));
-        assert_eq!(assignments[2].receiving_from, Some(bob.clone().name));
+        let mut session = SecretSatan {
+            participants: vec![alice.clone(), bob.clone(), charlie.clone()],
+        };
+        let result = session.assign_participants();
+        if let Err(e) = result {
+            panic!("Error: {:?}", e);
+        }
+        let givers = result.ok().unwrap();
+        assert_eq!(givers[0].giving_to, Some("Bob".to_string()));
+        assert_eq!(givers[1].giving_to, Some("Charlie".to_string()));
+        assert_eq!(givers[2].giving_to, Some("Alice".to_string()));
     }
 }
