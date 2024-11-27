@@ -37,6 +37,9 @@ impl SecretSatan {
             while recipients.len() > 0 {
                 let recipient = recipients.pop_front().unwrap();
                 let mut recipient = givers.get(&recipient.name).unwrap().clone();
+
+                println!("{} -> {}", participant.name, recipient.name);
+
                 if let Ok(()) = participant.validate_giving_to(&recipient) {
                     participant.giving_to = Some(recipient.name.clone());
                     recipient.receiving_from = Some(participant.name.clone());
@@ -45,8 +48,10 @@ impl SecretSatan {
                     givers.insert(participant.name.clone(), participant.clone());
                     givers.insert(recipient.name.clone(), recipient.clone());
                     break;
+                } else {
+                    recipient.drawn = true;
+                    recipients.push_back(recipient);
                 }
-                recipients.push_back(recipient);
             }
         }
 
@@ -253,8 +258,40 @@ mod tests {
         }
         let givers = result.ok().unwrap();
         assert_eq!(givers.len(), 3);
+        assert_ne!(givers[0].giving_to, None);
         assert_ne!(givers[0].giving_to, Some(givers[0].clone().name));
+        assert_ne!(givers[1].giving_to, None);
         assert_ne!(givers[1].giving_to, Some(givers[1].clone().name));
+        assert_ne!(givers[2].giving_to, None);
         assert_ne!(givers[2].giving_to, Some(givers[2].clone().name));
+    }
+
+    #[test]
+    fn five_participants_can_give_correctly() {
+        let alice = Participant::new("Alice".to_string());
+        let bob = Participant::new("Bob".to_string());
+        let charlie = Participant::new("Charlie".to_string());
+        let david = Participant::new("David".to_string());
+        let eve = Participant::new("Eve".to_string());
+
+        let mut session = SecretSatan {
+            participants: vec![alice.clone(), bob.clone(), charlie.clone(), david.clone(), eve.clone()],
+        };
+        let result = session.assign_participants();
+        if let Err(e) = result {
+            panic!("Error: {:?}", e);
+        }
+        let givers = result.ok().unwrap();
+        assert_eq!(givers.len(), 5);
+        assert_ne!(givers[0].giving_to, None);
+        assert_ne!(givers[0].giving_to, Some(givers[0].clone().name));
+        assert_ne!(givers[1].giving_to, None);
+        assert_ne!(givers[1].giving_to, Some(givers[1].clone().name));
+        assert_ne!(givers[2].giving_to, None);
+        assert_ne!(givers[2].giving_to, Some(givers[2].clone().name));
+        assert_ne!(givers[3].giving_to, None);
+        assert_ne!(givers[3].giving_to, Some(givers[3].clone().name));
+        assert_ne!(givers[4].giving_to, None);
+        assert_ne!(givers[4].giving_to, Some(givers[4].clone().name));
     }
 }
