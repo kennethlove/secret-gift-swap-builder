@@ -5,8 +5,6 @@ use dioxus::prelude::*;
 
 #[component]
 pub fn AddGiver(name_signal: Signal<String>, excluding_signal: Signal<String>) -> Element {
-    let _satan = use_context::<Signal<SecretSatan>>();
-
     rsx! {
         div {
             input {

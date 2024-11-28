@@ -6,26 +6,25 @@ use crate::components::AddGiver;
 use crate::{SecretSatan, use_persistent, Participant};
 
 #[component]
-pub fn GuestListItem(guest: String, participant: String) -> Element {
+pub fn GuestListItem(guest: String, participant: Participant) -> Element {
     let mut storage = use_persistent("satan", || SecretSatan::default());
-    let mut participants = storage.get().participants;
-    let mut participant = participants.iter_mut().find(|p| p.name == participant).unwrap().clone();
 
     rsx! {
         li {
             input {
                 r#type: "checkbox",
-                name: "exclude",
+                name: format!("{}-exclude", participant.name.replace(" ", "-")),
                 value: guest.clone(),
                 checked: participant.excluding.contains(&guest),
                 onchange: move |event| {
-                    dioxus_logger::tracing::info!("before {:?}", participant.excluding);
+                    let mut participants = storage.get().participants;
+                    let mut participant = participants.iter_mut().find(|p| p.name == participant.name).unwrap();
+
                     if event.checked() {
                         participant.excluding.push(guest.clone());
                     } else {
                         participant.excluding.retain(|name| name != &guest);
                     }
-                    dioxus_logger::tracing::info!("after {:?}", participant.excluding);
 
                     storage.set(SecretSatan { participants: participants.clone() });
                 }
@@ -53,7 +52,7 @@ pub fn App() -> Element {
                     {participant.name.clone()}
                     ul {
                         for guest in participants.clone().iter().filter(|p| participant.name != p.name) {
-                            GuestListItem { guest: guest.clone().name, participant: participant.clone().name }
+                            GuestListItem { guest: guest.clone().name, participant: participant.clone() }
                         }
                     }
                 }
@@ -64,6 +63,9 @@ pub fn App() -> Element {
                 onsubmit: move |event| {
                     let mut participant = Participant::default();
                     participant.name = name_signal.read().clone();
+                    if participant.name.is_empty() {
+                        return;
+                    }
                     participant.excluding = excluding_signal.read().clone().split('\n').map(|name| name.trim().to_string()).collect();
                     let mut participants = santana.get().participants.clone();
                     participants.push(participant);

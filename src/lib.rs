@@ -107,10 +107,6 @@ impl Participant {
         if self.excluding.contains(&recipient.name) {
             return Err(SecretSatanError::ParticipantCannotGiveToSomeoneTheyAreExcluding);
         }
-        // Cannot give to someone who has excluded you
-        // if recipient.excluding.contains(&self.name) {
-        //     return Err(SecretSatanError::ParticipantCannotReceiveFromSomeoneTheyAreExcluding);
-        // }
         // Cannot give to someone who has already been drawn
         if recipient.drawn {
             return Err(SecretSatanError::ParticipantAlreadyDrawn);
