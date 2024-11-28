@@ -1,7 +1,7 @@
 mod app;
 mod add_giver;
-mod add_giver_button;
+mod guest_list_item;
 
 pub use app::App;
 pub use add_giver::AddGiver;
-pub use add_giver_button::AddGiverButton;
+pub use guest_list_item::GuestListItem;

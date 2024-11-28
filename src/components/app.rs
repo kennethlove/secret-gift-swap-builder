@@ -2,42 +2,11 @@
 
 use dioxus::prelude::*;
 
-use crate::components::AddGiver;
+use crate::components::{AddGiver, GuestListItem};
 use crate::{SecretSatan, use_persistent, Participant};
 
 #[component]
-pub fn GuestListItem(guest: String, participant: Participant) -> Element {
-    let mut storage = use_persistent("satan", || SecretSatan::default());
-
-    rsx! {
-        li {
-            input {
-                r#type: "checkbox",
-                name: format!("{}-exclude", participant.name.replace(" ", "-")),
-                value: guest.clone(),
-                checked: participant.excluding.contains(&guest),
-                onchange: move |event| {
-                    let mut participants = storage.get().participants;
-                    let mut participant = participants.iter_mut().find(|p| p.name == participant.name).unwrap();
-
-                    if event.checked() {
-                        participant.excluding.push(guest.clone());
-                    } else {
-                        participant.excluding.retain(|name| name != &guest);
-                    }
-
-                    storage.set(SecretSatan { participants: participants.clone() });
-                }
-            }
-            {guest.clone()}
-        }
-    }
-}
-
-
-#[component]
 pub fn App() -> Element {
-    use_context_provider(|| Signal::new(SecretSatan::default()));
     let mut santana = use_persistent("satan", || SecretSatan::default());
     let mut name_signal = use_signal(|| "".to_string());
     let mut excluding_signal = use_signal(|| "".to_string());
