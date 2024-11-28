@@ -2,12 +2,10 @@
 
 use crate::{Participant, SecretSatan};
 use dioxus::prelude::*;
-use std::rc::Rc;
 
 #[component]
-pub fn AddGiver() -> Element {
-    let mut satan = use_context::<Signal<SecretSatan>>();
-    let mut name_signal = use_signal(|| "".to_string());
+pub fn AddGiver(name_signal: Signal<String>, excluding_signal: Signal<String>) -> Element {
+    let _satan = use_context::<Signal<SecretSatan>>();
 
     rsx! {
         div {
@@ -15,23 +13,18 @@ pub fn AddGiver() -> Element {
                 r#type: "text",
                 name: "name",
                 placeholder: "Enter a participant's name",
+                value: name_signal.read().clone(),
                 oninput: move |event| {
                     name_signal.set(event.value().clone());
                 }
             }
             textarea {
                 name: "excluded",
-                placeholder: "Enter any excluded receivers, one per line"
-            }
-            button {
-                r#type: "button",
-                onclick: move |_| {
-                    dioxus_logger::tracing::info!("Removing participant");
-                    // let name = name_signal.read().clone();
-                    // let index = satan.read().participants.iter().position(|p| p.name == name).unwrap_or(0);
-                    // satan.write().participants.remove(index);
-                },
-                "Remove"
+                placeholder: "Enter any excluded receivers, one per line",
+                value: excluding_signal.read().clone(),
+                oninput: move |event| {
+                    excluding_signal.set(event.value().clone());
+                }
             }
         }
     }
