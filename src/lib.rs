@@ -57,7 +57,7 @@ impl SecretSatan {
                 }
             }
             if count >= all_givers.len() {
-                return self.assign_participants();
+                return Err(SecretSatanError::PairingFailed)
             }
         }
 
@@ -127,6 +127,7 @@ pub enum SecretSatanError {
     ParticipantCannotReceiveFromSomeoneTheyAreGivingTo,
     ParticipantCannotGiveToSomeoneTheyAreExcluding,
     ParticipantCannotReceiveFromSomeoneTheyAreExcluding,
+    PairingFailed,
 }
 
 /// A persistent storage hook that can be used to store data across application reloads.

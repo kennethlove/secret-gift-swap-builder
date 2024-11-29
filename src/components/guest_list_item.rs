@@ -4,6 +4,7 @@ use crate::{use_persistent, Participant, SecretSatan};
 #[component]
 pub fn GuestListItem(guest: String, participant: Participant) -> Element {
     let mut storage = use_persistent("satan", || SecretSatan::default());
+    let mut state = use_context::<Signal<SecretSatan>>();
 
     rsx! {
         li {
@@ -14,7 +15,7 @@ pub fn GuestListItem(guest: String, participant: Participant) -> Element {
                 checked: participant.excluding.contains(&guest),
                 class: "mr-2",
                 onchange: move |event| {
-                    let mut participants = storage.get().participants;
+                    let mut participants = state.read().clone().participants;
                     let mut participant = participants.iter_mut().find(|p| p.name == participant.name).unwrap();
 
                     if event.checked() {
@@ -23,6 +24,7 @@ pub fn GuestListItem(guest: String, participant: Participant) -> Element {
                         participant.excluding.retain(|name| name != &guest);
                     }
 
+                    state.write().participants = participants.clone();
                     storage.set(SecretSatan { participants: participants.clone() });
                 }
             }

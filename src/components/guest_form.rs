@@ -48,8 +48,13 @@ pub fn GuestForm() -> Element {
                             disabled: participants.is_empty() || participants.len() < 3,
                             onclick: move |_| {
                                 let participants = state.read().clone().assign_participants();
-                                giving_list.set(participants.clone().expect("failed to assign participants"));
-                                dioxus_logger::tracing::info!("{:?}", participants);
+                                match participants {
+                                    Ok(participants) => giving_list.set(participants.clone()),
+                                    Err(_) => {
+                                        giving_list.set(vec![]);
+                                        eval("alert('There was an error calculating the gift giving list. Please try again.')");
+                                    },
+                                }
                             },
                             "Calculate gift giving list"
                         }
