@@ -1,0 +1,2 @@
+[build]
+command = "rustup toolchain install stable && rustup default stable && cargo install dioxus-cli && dx build --release --platform web"
