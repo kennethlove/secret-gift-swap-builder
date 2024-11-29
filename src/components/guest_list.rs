@@ -18,6 +18,10 @@ pub fn GuestList() -> Element {
                         class: "text-2xl font-bold",
                         {participant.name.clone()}
                     }
+                    h3 {
+                        class: "text-sm font-semibold",
+                        "can't give to"
+                    }
                     ul {
                         for guest in participants.clone().iter().filter(|p| participant.name != p.name) {
                             GuestListItem { guest: guest.clone().name, participant: participant.clone() }

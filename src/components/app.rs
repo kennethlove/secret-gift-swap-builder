@@ -36,7 +36,13 @@ pub fn App() -> Element {
 
                 p {
                     class: "text-white text-sm my-4 text-center",
-                    "Made with ❤️ by klove."
+                    "Made with ❤️ by ",
+                    a {
+                        href: "https://thekennethlove.com",
+                        class: "underline",
+                        "klove"
+                    },
+                    "."
                 }
             }
         }

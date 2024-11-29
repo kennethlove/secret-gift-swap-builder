@@ -34,7 +34,7 @@ pub fn GuestForm() -> Element {
                 },
                 AddGiver { name_signal, excluding_signal}
                 div {
-                    class: "flex flex-row gap-2 w-full",
+                    class: "flex flex-row gap-2 w-full justify-between",
                     div {
                         class: "w-1/2",
                         button {
@@ -44,7 +44,8 @@ pub fn GuestForm() -> Element {
                         }
                         button {
                             r#type: "button",
-                            class: "text-slate-800 bg-green-300 px-3 py-2 rounded-lg border-green-700 border-2 mr-2 cursor-pointer",
+                            class: "text-slate-800 bg-green-300 px-3 py-2 rounded-lg border-green-700 border-2 mr-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
+                            disabled: participants.is_empty() || participants.len() < 3,
                             onclick: move |_| {
                                 let participants = state.read().clone().assign_participants();
                                 giving_list.set(participants.clone().expect("failed to assign participants"));
@@ -54,11 +55,13 @@ pub fn GuestForm() -> Element {
                         }
                     }
                     div {
-                        class: "flex flex-row text-pretty gap-1",
+                        class: "flex flex-row flex-nowrap gap-1 justify-end",
                         div {
+                            class: "max-w-max",
                             button {
                                 r#type: "button",
-                                class: "bg-gray-500 text-white px-3 py-2 rounded-lg border-red-700 border-2 cursor-pointer whitespace-nowrap",
+                                class: "bg-gray-500 text-white px-3 py-2 rounded-lg border-red-700 border-2 cursor-pointer whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50",
+                                disabled: participants.is_empty(),
                                 onclick: move |_| {
                                     state.write().participants.clear();
                                     storage.set(SecretSatan::default());
@@ -67,10 +70,12 @@ pub fn GuestForm() -> Element {
                             }
                         }
                         div {
-                            class: "text-xs text-gray-900 font-semibold",
+                            class: "text-xs text-gray-900 font-semibold flex-shrink w-fit text-pretty",
                             "This will reset ",
                             i { "all" },
-                            " participants and their exclusions."
+                            " participants ",
+                            br {},
+                            "and their exclusions."
                         }
                     }
                 }
