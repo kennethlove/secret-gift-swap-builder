@@ -3,16 +3,21 @@
 use dioxus::prelude::*;
 
 use crate::components::{AddGiver, GuestForm, GuestList, GuestListItem, ListOutput};
-use crate::{SecretSatan, use_persistent, Participant};
+use crate::{SecretSatan, use_persistent, Participant, UsePersistent};
+
+fn get_saved_state(storage: UsePersistent<SecretSatan>) -> Signal<SecretSatan> {
+    let mut state = SecretSatan::default();
+    if !storage.get().participants.is_empty() {
+        state = storage.get();
+    }
+    Signal::new(state)
+}
 
 #[component]
 pub fn App() -> Element {
-    let mut santana = use_persistent("satan", || SecretSatan::default());
-    let mut name_signal = use_signal(|| "".to_string());
-    let mut excluding_signal = use_signal(|| "".to_string());
-    let mut giving_list: Signal<Vec<Participant>> = use_signal(|| vec![]);
-
-    let mut participants = santana.get().participants.clone();
+    let storage = use_persistent("satan", || SecretSatan::default());
+    use_context_provider(|| get_saved_state(storage));
+    use_context_provider(|| Signal::<Vec<Participant>>::new(vec![]));
 
     rsx! {
         div {

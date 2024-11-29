@@ -5,8 +5,8 @@ use components::GuestListItem;
 
 #[component]
 pub fn GuestList() -> Element {
-    let mut storage = use_persistent("satan", || SecretSatan::default());
-    let participants = storage.get().participants.clone();
+    let state = use_context::<Signal<SecretSatan>>();
+    let participants = state.read().participants.clone();
 
     rsx! {
         div {
