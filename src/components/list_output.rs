@@ -8,27 +8,25 @@ pub fn ListOutput() -> Element {
 
     let participants = state.read().participants.clone();
 
-    let mut classes = vec!["mt-4", "flex", "flex-row", "flex-wrap", "gap-4"];
-    if giving_list.read().is_empty() {
-        classes.push("hidden");
-    }
-
     rsx! {
         div {
-            class: classes.join(" "),
+            class: if giving_list.read().is_empty() { "hidden mt-4" } else { "mt-4" },
             h2 {
                 class: "text-2xl font-bold w-full text-white",
                 "Gift Giving List"
             }
 
-            for participant in giving_list.read().iter() {
-                div {
-                    class: "px-4 py-2 shadow-md bg-white rounded-lg justify-stretch",
-                    h2 {
-                        class: "text-2xl font-bold",
-                        {participant.name.clone()}
-                        " is giving to "
-                        {participant.giving_to.clone().unwrap()}
+            div {
+                class: "grid grid-row grid-wrap gap-4 w-full mt-4 sm:grid-cols-2 md:grid-cols-3",
+                for participant in giving_list.read().iter() {
+                    div {
+                        class: "px-4 py-2 shadow-md bg-white rounded-lg",
+                        h2 {
+                            class: "text-2xl font-bold",
+                            {participant.name.clone()}
+                            " is giving to "
+                            {participant.giving_to.clone().unwrap()}
+                        }
                     }
                 }
             }
