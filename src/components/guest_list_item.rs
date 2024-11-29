@@ -12,6 +12,7 @@ pub fn GuestListItem(guest: String, participant: Participant) -> Element {
                 name: format!("{}-exclude", participant.name.replace(" ", "-")),
                 value: guest.clone(),
                 checked: participant.excluding.contains(&guest),
+                class: "mr-2",
                 onchange: move |event| {
                     let mut participants = storage.get().participants;
                     let mut participant = participants.iter_mut().find(|p| p.name == participant.name).unwrap();

@@ -2,7 +2,7 @@
 
 use dioxus::prelude::*;
 
-use crate::components::{AddGiver, GuestListItem};
+use crate::components::{AddGiver, GuestForm, GuestList, GuestListItem, ListOutput};
 use crate::{SecretSatan, use_persistent, Participant};
 
 #[component]
@@ -16,63 +16,24 @@ pub fn App() -> Element {
 
     rsx! {
         div {
-            for mut participant in participants.clone().iter_mut() {
+            div {
+                class: "container mx-auto sm:w-full lg:w-3/4 mt-4",
+                h1 {
+                    class: "text-3xl font-bold text-white mb-2",
+                    "Secret Satan"
+                }
                 div {
-                    {participant.name.clone()}
-                    ul {
-                        for guest in participants.clone().iter().filter(|p| participant.name != p.name) {
-                            GuestListItem { guest: guest.clone().name, participant: participant.clone() }
-                        }
-                    }
+                    class: "flex flex-col gap-4 flex-wrap justify-stretch items-start",
+                    GuestForm {}
+                    GuestList {}
+                }
+                ListOutput {}
+
+                p {
+                    class: "text-white text-sm my-4 text-center",
+                    "Made with ❤️ by klove."
                 }
             }
-        }
-        div {
-            form {
-                onsubmit: move |event| {
-                    let mut participant = Participant::default();
-                    participant.name = name_signal.read().clone();
-                    if participant.name.is_empty() {
-                        return;
-                    }
-                    participant.excluding = excluding_signal.read().clone().split('\n').map(|name| name.trim().to_string()).collect();
-                    let mut participants = santana.get().participants.clone();
-                    participants.push(participant);
-                    santana.set(SecretSatan { participants });
-
-                    name_signal.set("".to_string());
-                    excluding_signal.set("".to_string());
-                },
-                AddGiver { name_signal, excluding_signal}
-                button {
-                    r#type: "submit",
-                    "Add"
-                }
-                button {
-                    r#type: "button",
-                    onclick: move |_| {
-                        santana.set(SecretSatan::default());
-                    },
-                    "Reset"
-                }
-            }
-        }
-        div {
-            button {
-                r#type: "button",
-                onclick: move |_| {
-                    let participants = santana.get().assign_participants();
-                    giving_list.set(participants.clone().expect("failed to assign participants"));
-                    dioxus_logger::tracing::info!("{:?}", participants);
-                },
-                "Calculate gift giving list"
-            }
-
-            textarea {
-                readonly: true,
-                value: giving_list.read().iter().map(|p| format!("{} -> {}", p.clone().name, p.clone().giving_to.unwrap())).collect::<Vec<String>>().join("\n")
-            }
-
         }
     }
 }
