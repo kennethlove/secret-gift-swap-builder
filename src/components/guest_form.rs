@@ -39,12 +39,12 @@ pub fn GuestForm() -> Element {
                         class: "w-1/2",
                         button {
                             r#type: "submit",
-                            class: "bg-green-500 text-white px-3 py-2 rounded-lg border-green-700 border-2 mr-2 cursor-pointer",
+                            class: "bg-green-600 text-green-100 px-3 py-2 rounded-lg border-green-700 border-2 mr-2 cursor-pointer hover:bg-green-400 hover:text-green-900 transition",
                             "Add"
                         }
                         button {
                             r#type: "button",
-                            class: "text-slate-800 bg-green-300 px-3 py-2 rounded-lg border-green-700 border-2 mr-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
+                            class: "group text-gray-800 bg-white px-1 py-2 rounded-lg border-gray-200 border-2 mr-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 calculate-button transition",
                             disabled: participants.is_empty() || participants.len() < 3,
                             onclick: move |_| {
                                 let participants = state.read().clone().assign_participants();
@@ -56,7 +56,10 @@ pub fn GuestForm() -> Element {
                                     },
                                 }
                             },
-                            "Calculate gift giving list"
+                            span {
+                                class: "bg-white py-1 px-1 rounded-md",
+                                "Calculate gift giving list"
+                            }
                         }
                     }
                     div {
@@ -65,7 +68,7 @@ pub fn GuestForm() -> Element {
                             class: "max-w-max",
                             button {
                                 r#type: "button",
-                                class: "bg-gray-500 text-white px-3 py-2 rounded-lg border-red-700 border-2 cursor-pointer whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50",
+                                class: "bg-red-900 text-white px-3 py-2 rounded-lg border-red-700 border-2 cursor-danger whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 hover:bg-red-600",
                                 disabled: participants.is_empty(),
                                 onclick: move |_| {
                                     state.write().participants.clear();
@@ -75,7 +78,7 @@ pub fn GuestForm() -> Element {
                             }
                         }
                         div {
-                            class: "text-xs text-gray-900 font-semibold flex-shrink w-fit text-pretty",
+                            class: "text-xs text-gray-100 font-semibold flex-shrink w-fit text-pretty pt-1",
                             "This will reset ",
                             i { "all" },
                             " participants ",
