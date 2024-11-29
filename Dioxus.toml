@@ -8,7 +8,8 @@ name = "secret-satan"
 default_platform = "web"
 
 # `build` & `serve` dist path
-out_dir = "dist"
+#out_dir = "dist"
+out_dir = "docs"
 
 # resource (assets) file folder
 asset_dir = "assets"
@@ -17,6 +18,8 @@ asset_dir = "assets"
 
 # HTML title tag content
 title = "secret-satan"
+
+base_path = "secret-satan"
 
 [web.watcher]
 
@@ -31,7 +34,7 @@ watch_path = ["src", "assets"]
 
 # CSS style file
 
-style = ["/main.css"]
+style = ["main.css"]
 
 # Javascript code file
 script = []
