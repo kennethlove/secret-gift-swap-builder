@@ -2,7 +2,7 @@
 
 use dioxus::prelude::*;
 
-use crate::components::{AddGiver, GuestForm, GuestList, GuestListItem, ListOutput};
+use crate::components::{AddGiver, ClearListModal, DeleteParticipantModal, GuestForm, GuestList, GuestListItem, ListOutput};
 use crate::{use_persistent, Participant, SecretSatan, UsePersistent};
 
 fn get_saved_state(storage: UsePersistent<SecretSatan>) -> Signal<SecretSatan> {
@@ -18,6 +18,9 @@ pub fn App() -> Element {
     let storage = use_persistent("satan", || SecretSatan::default());
     use_context_provider(|| get_saved_state(storage));
     use_context_provider(|| Signal::<Vec<Participant>>::new(vec![]));
+    use_context_provider(|| Signal::<Option<Participant>>::new(None));
+    use_context_provider(|| Signal::<bool>::new(false));
+    let selected_participant = use_context::<Signal<Option<Participant>>>();
 
     rsx! {
         div {
@@ -45,6 +48,8 @@ pub fn App() -> Element {
                     "."
                 }
             }
+            ClearListModal {}
+            DeleteParticipantModal {}
         }
     }
 }

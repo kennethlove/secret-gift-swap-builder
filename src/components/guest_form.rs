@@ -7,6 +7,7 @@ use components::AddGiver;
 pub fn GuestForm() -> Element {
     let mut storage = use_persistent("satan", || SecretSatan::default());
     let mut state = use_context::<Signal<SecretSatan>>();
+    let mut modal_open = use_context::<Signal<bool>>();
 
     let mut name_signal = use_signal(|| "".to_string());
     let mut excluding_signal = use_signal(|| "".to_string());
@@ -74,8 +75,7 @@ pub fn GuestForm() -> Element {
                                 class: "bg-red-900 text-white px-3 py-2 rounded-lg border-red-700 border-2 cursor-danger whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 hover:bg-red-600",
                                 disabled: participants.is_empty(),
                                 onclick: move |_| {
-                                    state.write().participants.clear();
-                                    storage.set(SecretSatan::default());
+                                    modal_open.set(true);
                                 },
                                 "Reset All"
                             }

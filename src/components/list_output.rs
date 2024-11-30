@@ -5,6 +5,7 @@ use dioxus::prelude::*;
 pub fn ListOutput() -> Element {
     let state = use_context::<Signal<SecretSatan>>();
     let giving_list = use_context::<Signal<Vec<Participant>>>();
+    let selected_participant = use_context::<Signal<Option<Participant>>>();
 
     let participants = state.read().participants.clone();
 
