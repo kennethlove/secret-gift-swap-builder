@@ -24,9 +24,9 @@ pub fn DeleteParticipantModal() -> Element {
                 div {
                     class: "flex items-center gap-4 min-h-full justify-center",
                     div {
-                        class: "relative transform overflow-hidden",
+                        class: "relative transform overflow-hidden p-2 candy-cane-striped rounded-xl",
                         div {
-                            class: "mx-auto bg-white border border-orange-500 rounded-xl p-4",
+                            class: "mx-auto bg-white border border-red-400 rounded-xl p-2",
                             div {
                                 class: "flex-1",
                                 h1 {
@@ -41,6 +41,8 @@ pub fn DeleteParticipantModal() -> Element {
                             div {
                                 class: "flex justify-end gap-4 mt-4",
                                 button {
+                                    r#type: "button",
+                                    class: "bg-red-900 text-white px-3 py-2 rounded-lg border-red-700 border-2 cursor-danger whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 hover:bg-red-600 cursor-pointer",
                                     onclick: move |event| {
                                         state.write().remove_participant(&selected.clone());
                                         storage.set(SecretSatan { participants: state.read().participants.clone() });
@@ -49,10 +51,15 @@ pub fn DeleteParticipantModal() -> Element {
                                     "Yes"
                                 }
                                 button {
+                                    r#type: "button",
+                                    class: "group text-gray-800 bg-white px-1 py-2 rounded-lg border-gray-200 border-2 mr-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 calculate-button transition",
                                     onclick: move |event| {
                                         participant.set(None);
                                     },
-                                    "No"
+                                    span {
+                                        class: "bg-white py-1 px-1 rounded-md",
+                                        "Nevermind"
+                                    }
                                 }
                             }
                         }
@@ -81,9 +88,9 @@ pub fn ClearListModal() -> Element {
                 div {
                     class: "flex items-center gap-4 min-h-full justify-center",
                     div {
-                        class: "relative transform overflow-hidden",
+                        class: "relative transform overflow-hidden candy-cane-striped p-2 rounded-xl",
                         div {
-                            class: "mx-auto bg-white border border-orange-500 rounded-xl p-4",
+                            class: "mx-auto bg-white border border-red-400 rounded-xl p-2",
                             div {
                                 class: "flex-1",
                                 h1 {
@@ -98,6 +105,8 @@ pub fn ClearListModal() -> Element {
                             div {
                                 class: "flex justify-end gap-4 mt-4",
                                 button {
+                                    r#type: "button",
+                                    class: "bg-red-900 text-white px-3 py-2 rounded-lg border-red-700 border-2 cursor-danger whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 hover:bg-red-600 cursor-pointer",
                                     onclick: move |event| {
                                         state.write().participants.clear();
                                         storage.set(SecretSatan::default());
@@ -106,10 +115,15 @@ pub fn ClearListModal() -> Element {
                                     "Yes"
                                 }
                                 button {
+                                    r#type: "button",
+                                    class: "group text-gray-800 bg-white px-1 py-2 rounded-lg border-gray-200 border-2 mr-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 calculate-button transition",
                                     onclick: move |event| {
                                         open.set(false);
                                     },
-                                    "No"
+                                    span {
+                                        class: "bg-white py-1 px-1 rounded-md",
+                                        "Nevermind"
+                                    }
                                 }
                             }
                         }

@@ -745,6 +745,9 @@
   .border-orange-500 {
     border-color: var(--color-orange-500);
   }
+  .border-red-400 {
+    border-color: var(--color-red-400);
+  }
   .border-red-700 {
     border-color: var(--color-red-700);
   }
@@ -791,6 +794,9 @@
   }
   .bg-no-repeat {
     background-repeat: no-repeat;
+  }
+  .p-2 {
+    padding: calc(var(--spacing) * 2);
   }
   .p-4 {
     padding: calc(var(--spacing) * 4);
@@ -868,6 +874,9 @@
   }
   .text-gray-900 {
     color: var(--color-gray-900);
+  }
+  .text-red-200 {
+    color: var(--color-red-200);
   }
   .text-red-800 {
     color: var(--color-red-800);
