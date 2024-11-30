@@ -24,7 +24,10 @@ pub fn ListOutput() -> Element {
                         h2 {
                             class: "text-2xl font-bold",
                             {participant.name.clone()}
-                            " is giving to "
+                            span {
+                                class: "font-normal",
+                                " is giving to "
+                            }
                             {participant.giving_to.clone().unwrap()}
                         }
                     }
