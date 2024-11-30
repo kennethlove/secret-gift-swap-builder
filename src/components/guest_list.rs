@@ -9,11 +9,14 @@ pub fn RemoveGuestButton(participant: Participant) -> Element {
     let name = participant.name.clone();
     rsx! {
         span {
-            class: "px-4 py-2 bg-white rounded-full absolute bottom-2 right-2 select-none hover:shadow-lg hover:cursor-pointer",
+            class: "p-1 bg-white rounded-full absolute bottom-2 right-2 select-none hover:shadow-lg hover:cursor-pointer text-xs",
             onclick: move |_| {
                 selected_participant.set(Some(participant.clone()));
             },
-            "X"
+            span {
+                class: "material-symbols-outlined",
+                "delete"
+            }
         }
     }
 }
