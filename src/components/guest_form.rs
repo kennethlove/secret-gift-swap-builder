@@ -39,8 +39,11 @@ pub fn GuestForm() -> Element {
                         class: "w-1/2",
                         button {
                             r#type: "submit",
-                            class: "bg-green-600 text-green-100 px-3 py-2 rounded-lg border-green-700 border-2 mr-2 cursor-pointer hover:bg-green-400 hover:text-green-900 transition",
-                            "Add"
+                            class: "group text-gray-800 bg-white px-1 py-2 rounded-lg border-gray-200 border-2 mr-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 calculate-button transition",
+                            span {
+                                class: "bg-white py-1 px-1 rounded-md",
+                                "Add participant"
+                            }
                         }
                         button {
                             r#type: "button",

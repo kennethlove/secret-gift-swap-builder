@@ -1,5 +1,5 @@
-use dioxus::prelude::*;
 use crate::{use_persistent, Participant, SecretSatan};
+use dioxus::prelude::*;
 
 #[component]
 pub fn GuestListItem(guest: String, participant: Participant) -> Element {
@@ -13,7 +13,7 @@ pub fn GuestListItem(guest: String, participant: Participant) -> Element {
                 name: format!("{}-exclude", participant.name.replace(" ", "-")),
                 value: guest.clone(),
                 checked: participant.excluding.contains(&guest),
-                class: "mr-2",
+                class: "mr-2 rounded text-red-800 ",
                 onchange: move |event| {
                     let mut participants = state.read().clone().participants;
                     let mut participant = participants.iter_mut().find(|p| p.name == participant.name).unwrap();
