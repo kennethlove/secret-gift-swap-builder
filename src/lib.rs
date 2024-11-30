@@ -1,10 +1,10 @@
 pub mod components;
 
-use std::collections::{HashMap, VecDeque};
 use dioxus::prelude::*;
 use gloo_storage::{LocalStorage, Storage};
 use rand::seq::SliceRandom;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::collections::{HashMap, VecDeque};
 
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 pub struct SecretSatan {
@@ -20,6 +20,10 @@ impl SecretSatan {
 
     pub fn add_participant(&mut self, participant: Participant) {
         self.participants.push(participant);
+    }
+
+    pub fn remove_participant(&mut self, participant: &Participant) {
+        self.participants.retain(|p| p != participant);
     }
 
     pub fn assign_participants(self) -> Result<Vec<Participant>, SecretSatanError> {
