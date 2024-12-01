@@ -24,12 +24,17 @@ pub fn App() -> Element {
 
     rsx! {
         div {
-            class: "container-lg mx-auto px-4",
+            class: "lg:w-1/2 mx-auto px-4",
             div {
-                class: "w-full mt-4",
+                class: "w-full",
                 h1 {
                     class: "text-3xl font-bold text-white mb-2",
-                    "Secret Satan"
+                    "Secret Satan",
+                    img {
+                        src: "/android-chrome-512x512.png",
+                        alt: "",
+                        class: "size-8 inline-block ml-2"
+                    }
                 }
                 div {
                     class: "flex flex-col gap-4 flex-wrap justify-stretch items-start",
