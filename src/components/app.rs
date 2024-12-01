@@ -24,7 +24,7 @@ pub fn App() -> Element {
 
     rsx! {
         div {
-            class: "lg:w-1/2 mx-auto px-4",
+            class: "lg:w-2/3 mx-auto p-4",
             div {
                 class: "w-full",
                 h1 {

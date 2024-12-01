@@ -820,6 +820,9 @@
   .p-2 {
     padding: calc(var(--spacing) * 2);
   }
+  .p-4 {
+    padding: calc(var(--spacing) * 4);
+  }
   .px-1 {
     padding-inline: calc(var(--spacing) * 1);
   }
@@ -1081,6 +1084,11 @@
   .lg\:w-1\/2 {
     @media (width >= 64rem) {
       width: calc(1/2 * 100%);
+    }
+  }
+  .lg\:w-2\/3 {
+    @media (width >= 64rem) {
+      width: calc(2/3 * 100%);
     }
   }
   .lg\:w-3\/4 {
