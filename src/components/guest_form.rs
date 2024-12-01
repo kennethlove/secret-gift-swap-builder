@@ -35,9 +35,9 @@ pub fn GuestForm() -> Element {
                 },
                 AddGiver { name_signal, excluding_signal}
                 div {
-                    class: "flex flex-row gap-2 w-full justify-between",
+                    class: "flex flex-row flex-wrap gap-2 w-full justify-between",
                     div {
-                        class: "w-1/2",
+                        class: "md:w-1/2 sm:w-full",
                         button {
                             r#type: "submit",
                             class: "group text-gray-800 bg-white px-1 py-2 rounded-lg border-gray-200 border-2 mr-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 calculate-button transition",

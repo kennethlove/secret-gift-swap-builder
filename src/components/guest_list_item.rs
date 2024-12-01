@@ -8,27 +8,29 @@ pub fn GuestListItem(guest: String, participant: Participant) -> Element {
 
     rsx! {
         li {
-            input {
-                r#type: "checkbox",
-                name: format!("{}-exclude", participant.name.replace(" ", "-")),
-                value: guest.clone(),
-                checked: participant.excluding.contains(&guest),
-                class: "mr-2 rounded text-red-800 ",
-                onchange: move |event| {
-                    let mut participants = state.read().clone().participants;
-                    let mut participant = participants.iter_mut().find(|p| p.name == participant.name).unwrap();
+            label {
+                input {
+                    r#type: "checkbox",
+                    name: format!("{}-exclude", participant.name.replace(" ", "-")),
+                    value: guest.clone(),
+                    checked: participant.excluding.contains(&guest),
+                    class: "mr-2 rounded text-red-800 ",
+                    onchange: move |event| {
+                        let mut participants = state.read().clone().participants;
+                        let mut participant = participants.iter_mut().find(|p| p.name == participant.name).unwrap();
 
-                    if event.checked() {
-                        participant.excluding.push(guest.clone());
-                    } else {
-                        participant.excluding.retain(|name| name != &guest);
+                        if event.checked() {
+                            participant.excluding.push(guest.clone());
+                        } else {
+                            participant.excluding.retain(|name| name != &guest);
+                        }
+
+                        state.write().participants = participants.clone();
+                        storage.set(SecretSatan { participants: participants.clone() });
                     }
-
-                    state.write().participants = participants.clone();
-                    storage.set(SecretSatan { participants: participants.clone() });
                 }
+                {guest.clone()}
             }
-            {guest.clone()}
         }
     }
 }

@@ -24,8 +24,9 @@ pub fn App() -> Element {
 
     rsx! {
         div {
+            class: "container-lg mx-auto px-4",
             div {
-                class: "container mx-auto sm:w-full lg:w-3/4 mt-4",
+                class: "w-full mt-4",
                 h1 {
                     class: "text-3xl font-bold text-white mb-2",
                     "Secret Satan"
